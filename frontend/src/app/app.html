@@ -1,0 +1,32 @@
+<nav class="riel" aria-label="Secciones">
+  <a class="marca" routerLink="/chat" aria-label="vertex-salvador studio, inicio">
+    <img src="icono.svg" alt="" width="36" height="36" />
+  </a>
+  @for (s of secciones; track s.ruta) {
+    <a class="destino" [routerLink]="s.ruta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: false }">
+      <span class="pastilla"><span class="material-symbols-outlined" aria-hidden="true">{{ s.icono }}</span></span>
+      <span class="nombre">{{ s.nombre }}</span>
+    </a>
+  }
+  <span class="hueco"></span>
+  @for (s of secundarias; track s.ruta) {
+    <a class="destino" [routerLink]="s.ruta" routerLinkActive="activo">
+      <span class="pastilla">
+        <span class="material-symbols-outlined" aria-hidden="true">{{ s.icono }}</span>
+        @if (s.ruta === '/estado' && estado(); as e) {
+          <span class="luz" [class.bien]="e.listo && e.contexto_ok" [matTooltip]="e.listo && e.contexto_ok ? 'Todo listo' : 'Revise el estado'"></span>
+        }
+      </span>
+      <span class="nombre">{{ s.nombre }}</span>
+    </a>
+  }
+</nav>
+
+<main class="lienzo">
+  @if (sinBackend()) {
+    <p class="aviso-global" role="alert">
+      No hay conexión con el backend. Abra <strong>iniciar.bat</strong> y recargue esta página.
+    </p>
+  }
+  <router-outlet />
+</main>

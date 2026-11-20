@@ -1,0 +1,31 @@
+:host { display: grid; grid-template-columns: 88px 1fr; height: 100dvh; }
+
+.riel {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 16px 0; background: var(--vs-hoja); border-right: 1px solid var(--vs-borde);
+}
+.marca { margin-bottom: 20px; display: block; }
+.hueco { flex: 1; }
+.destino {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 80px; padding: 6px 0;
+  color: var(--vs-tenue); text-decoration: none; font-size: 12px; font-weight: 500; text-align: center; line-height: 1.2;
+}
+.pastilla {
+  position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: 16px;
+  transition: background-color .15s;
+}
+.destino:hover .pastilla { background: #e8ecf3; }
+.destino.activo { color: var(--vs-tinta); }
+.destino.activo .pastilla { background: #dbe4f6; color: var(--vs-cobalto); }
+.luz { position: absolute; top: 4px; right: 14px; width: 8px; height: 8px; border-radius: 50%; background: #c2410c; }
+.luz.bien { background: var(--vs-jade); }
+
+.lienzo { overflow: auto; min-width: 0; }
+.aviso-global { margin: 0; padding: 10px 24px; background: #fde8e6; color: #8c1d18; }
+
+@media (max-width: 720px) {
+  :host { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .riel { order: 2; flex-direction: row; justify-content: space-around; padding: 6px 0; border-right: 0; border-top: 1px solid var(--vs-borde); overflow-x: auto; }
+  .marca, .hueco { display: none; }
+  .destino { width: auto; min-width: 64px; }
+}

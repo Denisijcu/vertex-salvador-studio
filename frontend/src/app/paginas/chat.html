@@ -1,0 +1,157 @@
+<aside class="lista" aria-label="Conversaciones">
+  <button mat-flat-button class="nueva" (click)="nueva()">
+    <span class="material-symbols-outlined" aria-hidden="true">add</span> Conversación nueva
+  </button>
+  <ul>
+    @for (c of conversaciones(); track c.id) {
+      <li [class.actual]="c.id === conversacionActual()">
+        <a (click)="router.navigate(['/chat', c.id])" (keydown.enter)="router.navigate(['/chat', c.id])" tabindex="0">{{ c.titulo }}</a>
+        <button matIconButton class="quitar" (click)="borrar(c, $event)" [attr.aria-label]="'Borrar ' + c.titulo" matTooltip="Borrar">
+          <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+        </button>
+      </li>
+    } @empty {
+      <li class="vacio">Sus conversaciones aparecerán aquí.</li>
+    }
+  </ul>
+</aside>
+
+<section class="centro">
+  <div class="hilo" #hilo>
+    @if (errorCarga()) { <p class="error-carga">{{ errorCarga() }}</p> }
+
+    @if (!turnos().length && !enCurso()) {
+      <div class="bienvenida">
+        <h1>Pregunte sobre El Salvador.</h1>
+        <p>Historia, seguridad, política y la campaña contra las pandillas. Cada respuesta muestra de qué documentos
+          sale y marca las cifras que no aparecen en ellos.</p>
+        <div class="ejemplos">
+          @for (e of ejemplos; track e) {
+            <button mat-stroked-button (click)="usarEjemplo(e)">{{ e }}</button>
+          }
+        </div>
+      </div>
+    }
+
+    @for (t of turnos(); track $index; let i = $index) {
+      <article class="turno" [class.elegido]="expediente() === t">
+        <p class="pregunta">{{ t.pregunta }}</p>
+        @if (t.herramientas.length) {
+          <ol class="rastro">
+            @for (p of t.herramientas; track $index) {
+              <li><span class="material-symbols-outlined" aria-hidden="true">manage_search</span>{{ describir(p) }}
+                @if (p.documentos?.length) { <span class="n">({{ p.documentos!.length }} {{ p.documentos!.length === 1 ? 'documento' : 'documentos' }})</span> }
+              </li>
+            }
+          </ol>
+        }
+        @if (t.bloqueado) {
+          <p class="bloqueo"><span class="material-symbols-outlined" aria-hidden="true">shield</span>{{ t.respuesta }}</p>
+        } @else if (t.error) {
+          <p class="fallo">{{ t.respuesta }}</p>
+        } @else {
+          <div class="respuesta" [innerHTML]="html(t)"></div>
+        }
+        @for (a of t.avisos; track a) { <p class="aviso">{{ a }}</p> }
+
+        @if (!t.error && !t.bloqueado) {
+          <footer class="pie">
+            @if (t.fuentes.length) {
+              <button class="ver-fuentes" (click)="seleccion.set(i)">
+                <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                {{ t.fuentes.length }} {{ t.fuentes.length === 1 ? 'fuente' : 'fuentes' }}
+              </button>
+            } @else if (t.herramientas.length) {
+              <span class="sin-fuentes">Las búsquedas no encontraron documentos</span>
+            } @else {
+              <span class="sin-fuentes">Respondió sin consultar documentos</span>
+            }
+            @if (t.cifras_sin_respaldo.length) {
+              <span class="verif pendiente" matTooltip="Las cifras resaltadas no aparecen en los documentos consultados">
+                <span class="material-symbols-outlined" aria-hidden="true">error</span>
+                {{ t.cifras_sin_respaldo.length === 1 ? '1 cifra por comprobar' : t.cifras_sin_respaldo.length + ' cifras por comprobar' }}
+              </span>
+            } @else if (t.fuentes.length) {
+              <span class="verif bien"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>Las cifras salen de las fuentes</span>
+            }
+            @if (t.portero.veredicto === 'verde') {
+              <span class="verif bien" matTooltip="El Portero revisó la pregunta y la respuesta"><span class="material-symbols-outlined" aria-hidden="true">shield</span>Portero</span>
+            } @else if (t.portero.veredicto === 'rojo_salida') {
+              <span class="verif pendiente" matTooltip="El Portero ocultó datos sensibles de la respuesta"><span class="material-symbols-outlined" aria-hidden="true">shield</span>Portero: datos ocultados</span>
+            }
+            @if (t.segundos) { <span class="tiempo">{{ t.segundos }} s</span> }
+          </footer>
+          @if (seleccion() === i && t.fuentes.length) {
+            <div class="en-linea">
+              @for (f of t.fuentes; track f.doc_id) {
+                <button class="ficha" (click)="verDocumento(f)"><span class="id">{{ f.doc_id }}</span><span class="titulo">{{ f.fuente }}</span></button>
+              }
+            </div>
+          }
+        }
+      </article>
+    }
+
+    @if (enCurso(); as c) {
+      <article class="turno vivo" aria-live="polite">
+        <p class="pregunta">{{ c.pregunta }}</p>
+        @if (c.pasos.length) {
+          <ol class="rastro">
+            @for (p of c.pasos; track $index) {
+              <li>
+                @if (p.hecho) { <span class="material-symbols-outlined" aria-hidden="true">manage_search</span> }
+                @else { <mat-spinner diameter="16" /> }
+                {{ describir(p) }}
+                @if (p.hecho && p.documentos) { <span class="n">({{ p.documentos.length }} {{ p.documentos.length === 1 ? 'documento' : 'documentos' }})</span> }
+              </li>
+            }
+          </ol>
+        }
+        @if (c.texto) {
+          <div class="respuesta escribiendo" [innerHTML]="htmlParcial(c.texto)"></div>
+        } @else {
+          <p class="espera"><mat-spinner diameter="18" /> {{ c.estado || (c.pasos.length ? 'Leyendo los documentos…' : 'Pensando…') }}</p>
+        }
+      </article>
+    }
+  </div>
+
+  <form class="redactor" (submit)="$event.preventDefault(); preguntar()">
+    <label for="pregunta" class="oculto">Su pregunta</label>
+    <textarea id="pregunta" name="pregunta" [(ngModel)]="borrador" (keydown)="teclas($event)"
+              cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="8"
+              placeholder="Escriba su pregunta" title="Intro envía. Mayúsculas+Intro hace una línea nueva."></textarea>
+    @if (enCurso()) {
+      <button mat-stroked-button type="button" (click)="detener()">Detener</button>
+    } @else {
+      <button mat-flat-button type="submit" [disabled]="!borrador.trim()">Preguntar</button>
+    }
+  </form>
+</section>
+
+<aside class="expediente" aria-label="Fuentes de la respuesta">
+  @if (expediente(); as t) {
+    <h2>Fuentes</h2>
+    <p class="de">De la respuesta a «{{ t.pregunta.length > 70 ? t.pregunta.slice(0, 70) + '…' : t.pregunta }}»</p>
+    @for (f of t.fuentes; track f.doc_id) {
+      <button class="ficha" (click)="verDocumento(f)">
+        <span class="id">{{ f.doc_id }}@if (f.epoca && f.epoca !== 'general') {, {{ f.epoca }}}</span>
+        <span class="titulo">{{ f.fuente }}</span>
+        @if (f.texto) { <span class="extracto">{{ f.texto }}</span> }
+      </button>
+    } @empty {
+      <p class="de">Esta respuesta no usó documentos.</p>
+    }
+    @if (t.cifras_sin_respaldo.length) {
+      <div class="comprobar">
+        <h3>Por comprobar</h3>
+        <p>Estas cifras de la respuesta no aparecen en las fuentes de arriba:
+          <strong>{{ t.cifras_sin_respaldo.join(', ') }}</strong>. Pueden ser fechas o datos generales, pero
+          compruébelas antes de citarlas.</p>
+      </div>
+    }
+  } @else {
+    <h2>Fuentes</h2>
+    <p class="de">Aquí verá los documentos de los que sale cada respuesta. Pulse uno para leerlo entero.</p>
+  }
+</aside>

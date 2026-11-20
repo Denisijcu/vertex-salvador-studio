@@ -1,0 +1,24 @@
+# Datos del usuario: conversaciones y documentos nunca van al repositorio
+datos_usuario/
+reportes/
+# Libro
+libro/
+# Entornos y dependencias
+.venv/
+backend/.venv/
+node_modules/
+frontend/.angular/
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+# Secretos
+.env
+.env.*
+# Sistema y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
